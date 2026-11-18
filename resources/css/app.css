@@ -1,0 +1,278 @@
+@import 'tailwindcss';
+
+@source '../js';
+@source '../views';
+
+/* Dark mode is driven by a `dark` class on <html> (see ThemeContext). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Spider PLMS design tokens.
+ * Rebrand by changing the --color-brand-* scale; every component reads from it.
+ */
+@theme {
+  --font-sans: 'Montserrat Variable', 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-brand-50: #fff1f1;
+  --color-brand-100: #ffe0e0;
+  --color-brand-200: #ffc7c7;
+  --color-brand-300: #ff9d9d;
+  --color-brand-400: #f76060;
+  --color-brand-500: #e8302f;
+  --color-brand-600: #d6121b;
+  --color-brand-700: #b30e16;
+  --color-brand-800: #920f17;
+  --color-brand-900: #781319;
+  --color-brand-950: #430609;
+
+  --color-ink-900: #0f172a;
+  --color-ink-700: #334155;
+  --color-ink-500: #64748b;
+  --color-ink-400: #94a3b8;
+  --color-line: #e2e8f0;
+  --color-canvas: #f6f7fb;
+  --color-surface: #ffffff;
+
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
+  --shadow-pop: 0 10px 30px -12px rgb(15 23 42 / 0.25), 0 4px 10px -6px rgb(15 23 42 / 0.12);
+
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-slide-in: slide-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-slow: float 9s ease-in-out infinite;
+  --animate-drift: drift 18s ease-in-out infinite alternate;
+  --animate-marquee: marquee 38s linear infinite;
+  --animate-word-in: word-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  --animate-gradient: gradient-pan 8s ease infinite;
+  --animate-draw: draw 2.2s ease-out 0.4s both;
+  --animate-shake: shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  --animate-pop-in: pop-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-tour-progress: tour-progress 5500ms linear both;
+  --animate-shine: shine 3.4s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-in {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+  @keyframes drift {
+    from { transform: translate3d(-4%, -2%, 0) scale(1); }
+    to { transform: translate3d(5%, 4%, 0) scale(1.12); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes word-in {
+    from { opacity: 0; transform: translateY(0.45em); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgb(214 18 27 / 0.45); }
+    80%, 100% { box-shadow: 0 0 0 14px rgb(214 18 27 / 0); }
+  }
+  @keyframes gradient-pan {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes draw {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-7px); }
+    40%, 60% { transform: translateX(7px); }
+  }
+  @keyframes tour-progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes shine {
+    from { transform: translateX(-120%) skewX(-20deg); }
+    to { transform: translateX(320%) skewX(-20deg); }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(18px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-canvas text-ink-900 font-sans text-sm;
+    font-feature-settings: 'tnum' 0, 'lnum' 1;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-950;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .card {
+    @apply min-w-0 rounded-2xl border border-line bg-surface shadow-card;
+  }
+
+  .input {
+    @apply block h-11 w-full rounded-xl border border-line bg-surface px-3.5 text-sm text-ink-900 placeholder:text-ink-400 transition
+      focus:border-brand-500 focus:ring-4 focus:ring-brand-100 focus:outline-none
+      disabled:cursor-not-allowed disabled:bg-slate-50;
+  }
+
+  .label {
+    @apply mb-1.5 block text-[13px] font-semibold text-ink-700;
+  }
+
+  /* Scroll reveal: see components/landing/motion.tsx */
+  .reveal {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Pointer-following highlight on feature cards */
+  .spotlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), rgb(214 18 27 / 0.09), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+}
+
+
+:root {
+  --chart-brand: #d6121b;
+}
+
+/*
+ * ---------- Dark theme ----------
+ * Remaps the neutral tokens, then re-tints the handful of light "tint" utilities
+ * (bg-*-50, text-*-700 …) used by components. Unlayered on purpose: it must win over utilities.
+ */
+.dark {
+  color-scheme: dark;
+  --chart-brand: #f87171;
+
+  --color-canvas: #0a0f1f;
+  --color-surface: #111a2e;
+  --color-line: #243049;
+
+  --color-ink-900: #f1f5f9;
+  --color-ink-700: #cbd5e1;
+  --color-ink-500: #94a3b8;
+  --color-ink-400: #7b8aa5;
+
+  --color-slate-50: #0f1729;
+  --color-slate-100: #18233b;
+  --color-slate-200: #243049;
+  --color-slate-300: #34425f;
+  --color-slate-600: #a8b5ca;
+  --color-slate-700: #cbd5e1;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 1px 3px rgb(0 0 0 / 0.3);
+  --shadow-pop: 0 14px 34px -12px rgb(0 0 0 / 0.65), 0 4px 12px -6px rgb(0 0 0 / 0.5);
+}
+
+.dark .bg-white { background-color: var(--color-surface); }
+.dark .bg-white\/85 { background-color: rgb(10 15 31 / 0.85); }
+.dark .bg-white\/70 { background-color: rgb(17 26 46 / 0.7); }
+.dark .ring-white { --tw-ring-color: var(--color-surface); }
+.dark .ring-offset-2 { --tw-ring-offset-color: var(--color-surface); }
+
+/* brand tints */
+.dark .bg-brand-50, .dark .hover\:bg-brand-50:hover { background-color: rgb(232 48 47 / 0.14); }
+.dark .bg-brand-100 { background-color: rgb(232 48 47 / 0.22); }
+.dark .from-brand-100 { --tw-gradient-from: rgb(214 18 27 / 0.28); }
+.dark .text-brand-600, .dark .text-brand-700, .dark .text-brand-800 { color: #fca5a5; }
+.dark .hover\:text-brand-700:hover, .dark .hover\:text-brand-600:hover { color: #fecaca; }
+.dark .ring-brand-100, .dark .focus\:ring-brand-100:focus { --tw-ring-color: rgb(232 48 47 / 0.3); }
+.dark .ring-brand-200 { --tw-ring-color: rgb(232 48 47 / 0.4); }
+.dark .border-brand-200, .dark .border-brand-300, .dark .hover\:border-brand-200:hover, .dark .hover\:border-brand-300:hover { border-color: rgb(248 96 96 / 0.45); }
+.dark .focus\:border-brand-300:focus { border-color: rgb(248 96 96 / 0.6); }
+
+/* status tints (badges, alerts, avatars) */
+.dark .bg-rose-50, .dark .hover\:bg-rose-50:hover { background-color: rgb(244 63 94 / 0.13); }
+.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.13); }
+.dark .bg-orange-50 { background-color: rgb(249 115 22 / 0.13); }
+.dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.13); }
+.dark .bg-stone-50 { background-color: rgb(168 162 158 / 0.15); }
+.dark .bg-orange-100 { background-color: rgb(249 115 22 / 0.2); }
+.dark .bg-emerald-100 { background-color: rgb(16 185 129 / 0.2); }
+.dark .bg-amber-100 { background-color: rgb(245 158 11 / 0.2); }
+.dark .bg-rose-100 { background-color: rgb(244 63 94 / 0.2); }
+.dark .bg-stone-100 { background-color: rgb(168 162 158 / 0.22); }
+.dark .text-rose-600, .dark .text-rose-700 { color: #fda4af; }
+.dark .text-emerald-600, .dark .text-emerald-700 { color: #6ee7b7; }
+.dark .text-orange-600, .dark .text-orange-700 { color: #fdba74; }
+.dark .text-amber-600, .dark .text-amber-700, .dark .text-amber-800 { color: #fcd34d; }
+.dark .text-stone-700 { color: #d6d3d1; }
+.dark .ring-rose-200 { --tw-ring-color: rgb(244 63 94 / 0.32); }
+.dark .ring-emerald-200 { --tw-ring-color: rgb(16 185 129 / 0.32); }
+.dark .ring-orange-200 { --tw-ring-color: rgb(249 115 22 / 0.32); }
+.dark .ring-amber-200 { --tw-ring-color: rgb(245 158 11 / 0.32); }
+.dark .ring-stone-200 { --tw-ring-color: rgb(168 162 158 / 0.32); }
+.dark .ring-slate-200 { --tw-ring-color: rgb(148 163 184 / 0.25); }
+.dark .focus\:ring-rose-100:focus { --tw-ring-color: rgb(244 63 94 / 0.25); }
+.dark .bg-rose-600 { background-color: #e11d48; }
+
+/* data colours that must stay vivid keep their own hue; mute the shadows of coloured buttons */
+.dark .shadow-brand-600\/20, .dark .shadow-brand-600\/25 { --tw-shadow-color: rgb(214 18 27 / 0.35); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ---------- Print: invoices and reports always print on white ---------- */
+@media print {
+  .no-print { display: none !important; }
+  html, body { background: #fff !important; color: #000 !important; }
+  .print-area { box-shadow: none !important; border: 0 !important; }
+}
