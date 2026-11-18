@@ -32,8 +32,12 @@ class ProjectDocumentController extends Controller
 
         $document = $this->storage->store($project, $request->file('file'), $data['title'], $data['note'] ?? null, false, $request->boolean('visible_to_client', true), $request->user()->id);
 
+        $meta = ['type' => 'document.uploaded', 'subject' => $document, 'payload' => ['name' => $document->name, 'size' => $document->size]];
+
         if ($document->visible_to_client) {
-            $this->notifier->notify($project, 'document', "New document: {$document->title}", $document->note);
+            $this->notifier->notify($project, 'document', "New document: {$document->title}", $document->note, $meta);
+        } else {
+            $this->notifier->record($project, 'document', "Document added: {$document->title}", $document->note, $meta + ['internal' => true]);
         }
 
         return response()->json(['data' => TrackerPresenter::document($document)], 201);

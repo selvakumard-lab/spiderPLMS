@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureClientUser;
+use App\Http\Middleware\EnsurePlanFeature;
 use App\Http\Middleware\EnsureStaff;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTenantContext;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.required' => EnsureTenantContext::class,
             'staff' => EnsureStaff::class,
             'client' => EnsureClientUser::class,
+            'plan.feature' => EnsurePlanFeature::class,
         ]);
 
         // The tenant must be bound BEFORE route-model binding runs, otherwise

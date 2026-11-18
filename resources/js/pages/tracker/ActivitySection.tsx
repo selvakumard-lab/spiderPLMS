@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
-import { Alert, Badge, Button, Card, CardHeader, EmptyState, Field, Input, Modal, Progress, Select } from '@/components/ui'
+import { Alert, Badge, Button, Card, CardHeader, DatePicker, EmptyState, Field, Input, Modal, Progress, Select } from '@/components/ui'
 import { ConfirmButton, Textarea } from '@/components/ui/extra'
 import { todayISO } from '@/components/tracker/shared'
 import { useToast } from '@/context/ToastContext'
@@ -119,7 +119,7 @@ export function ActivitySection({ projectId, activities, lastProgress }: { proje
         <div className="space-y-4">
           {error && <Alert>{error}</Alert>}
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Date" htmlFor="a-date" error={errors.activity_date}><Input id="a-date" type="date" value={form.activity_date} onChange={(e) => set('activity_date', e.target.value)} /></Field>
+            <Field label="Date" htmlFor="a-date" error={errors.activity_date}><DatePicker id="a-date" value={form.activity_date} onChange={(e) => set('activity_date', e.target.value)} /></Field>
             <Field label="Status" htmlFor="a-status">
               <Select id="a-status" value={form.status} onChange={(e) => set('status', e.target.value)}>
                 <option value="pending">Pending</option><option value="in_progress">In progress</option><option value="completed">Completed</option>

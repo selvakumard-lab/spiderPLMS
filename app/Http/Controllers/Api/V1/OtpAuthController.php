@@ -64,8 +64,7 @@ class OtpAuthController extends Controller
             throw ValidationException::withMessages(['email' => 'This account has been disabled. Contact your workspace admin.']);
         }
 
-        $staticCode = filled(config('plms.static_otp')) ? (string) config('plms.static_otp') : null;
-        $code = $staticCode ?? (string) random_int(100000, 999999);
+        $code = (string) random_int(100000, 999999);
 
         LoginOtp::where('user_id', $user->id)->whereNull('used_at')->update(['used_at' => now()]);
         LoginOtp::create([
@@ -74,11 +73,9 @@ class OtpAuthController extends Controller
             'expires_at' => now()->addMinutes((int) config('plms.otp_ttl_minutes')),
         ]);
 
-        if ($staticCode === null) {
-            $this->sendCode($user, $code);
-        }
+        $this->sendCode($user, $code, $request);
 
-        return response()->json(['message' => $staticCode === null ? 'A sign-in code has been sent to your email.' : 'Enter your sign-in code to continue.']);
+        return response()->json(['message' => 'A sign-in code has been sent to your email.']);
     }
 
     public function verify(Request $request): JsonResponse
@@ -135,9 +132,10 @@ class OtpAuthController extends Controller
         ];
     }
 
-    private function sendCode(User $user, string $code): void
+    private function sendCode(User $user, string $code, Request $request): void
     {
         $appName = (string) SystemSetting::get('app_name');
+        $timezone = $user->tenant?->timezone ?: 'UTC';
 
         try {
             Mail::to($user->email)->send(new LoginCodeMail(
@@ -147,6 +145,10 @@ class OtpAuthController extends Controller
                 expiresInMinutes: (int) config('plms.otp_ttl_minutes'),
                 supportEmail: (string) SystemSetting::get('support_email'),
                 signInUrl: url($user->tenant ? '/'.$user->tenant->slug : '/superAdmin'),
+                audience: $user->isSuperAdmin() ? 'platform' : ($user->isClient() ? 'client' : 'team'),
+                recipientEmail: $user->email,
+                requestedAt: now($timezone)->format('j M Y, g:i A T'),
+                ipAddress: $request->ip(),
             ));
         } catch (\Throwable $e) {
             report($e);

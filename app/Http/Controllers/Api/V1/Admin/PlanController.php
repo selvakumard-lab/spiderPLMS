@@ -56,6 +56,31 @@ class PlanController extends Controller
         return response()->json(['data' => $this->present($plan->load('prices')->loadCount('tenants'))]);
     }
 
+    /**
+     * Saves the whole country-price grid in one go: every plan's fixed prices are replaced by the rows sent.
+     * A plan or country with no row has no fixed price and falls back to the converted USD price.
+     */
+    public function syncAllPrices(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'prices' => ['present', 'array', 'max:2000'],
+            'prices.*.plan_id' => ['required', 'integer', Rule::exists('plans', 'id')],
+            'prices.*.country_code' => ['required', 'string', 'size:2', Rule::exists('countries', 'code')],
+            'prices.*.price_monthly' => ['required', 'integer', 'min:0'],
+            'prices.*.price_yearly' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $byPlan = collect($data['prices'])->groupBy('plan_id');
+
+        DB::transaction(function () use ($byPlan): void {
+            foreach (Plan::all() as $plan) {
+                $this->syncPrices($plan, $byPlan->get($plan->id, collect())->unique(fn ($row) => strtoupper($row['country_code']))->values()->all());
+            }
+        });
+
+        return $this->index();
+    }
+
     public function destroy(Plan $plan): JsonResponse
     {
         abort_if($plan->tenants()->exists(), 422, 'This plan is used by tenants — deactivate it instead.');
@@ -78,6 +103,7 @@ class PlanController extends Controller
             'max_users' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'max_projects' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'storage_gb' => ['sometimes', 'integer', 'min:1'],
+            'whatsapp_chat' => ['sometimes', 'boolean'],
             'features' => ['sometimes', 'array'],
             'features.*' => ['string', 'max:120'],
             'is_active' => ['sometimes', 'boolean'],
@@ -119,6 +145,7 @@ class PlanController extends Controller
             'max_users' => $p->max_users,
             'max_projects' => $p->max_projects,
             'storage_gb' => $p->storage_gb,
+            'whatsapp_chat' => (bool) $p->whatsapp_chat,
             'features' => $p->features ?? [],
             'is_active' => $p->is_active,
             'tenants_count' => $p->tenants_count ?? $p->tenants()->count(),

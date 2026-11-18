@@ -75,7 +75,7 @@ class PortalController extends Controller
                 'id' => $m->id, 'date' => $m->meeting_date->toDateString(), 'title' => $m->title, 'discussion_points' => $m->discussion_points,
             ]),
             'documents' => $project->documents->map(fn (ProjectDocument $d) => TrackerPresenter::document($d)),
-            'events' => ProjectEvent::where('project_id', $project->id)->latest('id')->limit(100)->get()->map(fn (ProjectEvent $e) => TrackerPresenter::event($e)),
+            'events' => ProjectEvent::where('project_id', $project->id)->where('visible_to_client', true)->latest('id')->limit(100)->get()->map(fn (ProjectEvent $e) => TrackerPresenter::event($e)),
         ]);
     }
 

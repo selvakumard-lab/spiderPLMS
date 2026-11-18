@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api\V1\Tracker;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Project;
+use App\Models\ProjectAiAnalysis;
+use App\Services\ClientMailer;
 use App\Services\ClientNotifier;
 use App\Services\DeepSeekService;
 use App\Services\MilestonePlanner;
+use App\Services\ProjectOnboardingService;
 use App\Services\ProjectTrackerService;
 use App\Support\Tenancy\TenantContext;
 use App\Support\TrackerPresenter;
@@ -17,7 +20,7 @@ use Illuminate\Validation\Rule;
 
 class ProjectTrackerController extends Controller
 {
-    public function __construct(private ProjectTrackerService $tracker, private ClientNotifier $notifier, private MilestonePlanner $planner) {}
+    public function __construct(private ProjectTrackerService $tracker, private ClientNotifier $notifier, private MilestonePlanner $planner, private ProjectOnboardingService $onboarding, private ClientMailer $mailer) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -48,9 +51,38 @@ class ProjectTrackerController extends Controller
     {
         abort_unless(app(TenantContext::class)->get()->withinLimit('projects'), 402, 'Your plan project limit has been reached.');
 
+        $plan = $request->validate([
+            'analysis_id' => ['nullable', 'integer', Rule::exists('project_ai_analyses', 'id')->where('tenant_id', app(TenantContext::class)->id())->whereNull('project_id')],
+            'steps' => ['nullable', 'array', 'max:12'],
+            'steps.*.title' => ['required', 'string', 'max:190'],
+            'steps.*.description' => ['nullable', 'string', 'max:2000'],
+            'steps.*.stage' => ['nullable', Rule::in(array_keys(Project::STAGES))],
+            'steps.*.working_days' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'steps.*.deliverables' => ['nullable', 'array', 'max:10'],
+            'steps.*.deliverables.*' => ['string', 'max:200'],
+        ]);
+        $analysis = isset($plan['analysis_id']) ? ProjectAiAnalysis::find($plan['analysis_id']) : null;
+
         $project = Project::create($this->validated($request) + ['status_updated_at' => now(), 'status' => 'active']);
-        $this->planner->seedDefaults($project);
+
+        $created = $this->onboarding->applyPlan($project, $plan['steps'] ?? [], $analysis, $request->user());
+        if ($created === 0) {
+            $this->planner->seedDefaults($project);
+        }
         $this->tracker->refresh($project);
+
+        $this->notifier->record($project, 'status', 'Project created', null, [
+            'type' => 'project.created', 'subject' => $project, 'internal' => true,
+            'payload' => ['start_date' => $project->start_date?->toDateString(), 'due_date' => $project->due_date?->toDateString(), 'working_days' => $project->total_working_days, 'steps' => $project->milestones()->count(), 'from_document' => $analysis !== null],
+        ]);
+        if ($analysis !== null) {
+            $this->notifier->record($project, 'document', 'Project documentation analysed by AI', "Source: {$analysis->source}. Confidence {$analysis->confidence}%.", [
+                'type' => 'ai.analysis_applied', 'subject' => $analysis, 'internal' => true,
+                'payload' => ['source' => $analysis->source, 'confidence' => $analysis->confidence, 'estimated_days' => $analysis->estimate['working_days'] ?? null, 'file' => $analysis->original_name],
+            ]);
+        }
+
+        $this->mailer->projectCreated($project, $request->user());
 
         return response()->json(['data' => TrackerPresenter::project($project->refresh())], 201);
     }
@@ -84,16 +116,28 @@ class ProjectTrackerController extends Controller
         ]);
 
         $previousStage = $project->stage;
+        $previousStatus = $project->status;
+        $previousDue = $project->due_date?->toDateString();
         $project->update($data + $extra);
 
         if ($project->wasChanged('stage')) {
-            $this->notifier->notify($project, 'stage', "Project moved to {$project->stageLabel()}", 'Previous stage: '.(Project::STAGES[$previousStage] ?? '-').'.');
+            $this->notifier->notify($project, 'stage', "Project moved to {$project->stageLabel()}", 'Previous stage: '.(Project::STAGES[$previousStage] ?? '-').'.', [
+                'type' => 'project.stage_changed', 'subject' => $project, 'payload' => ['from' => $previousStage, 'to' => $project->stage],
+            ]);
         }
         if ($project->wasChanged('status')) {
-            $this->notifier->notify($project, 'status', 'Project marked as '.str_replace('_', ' ', $project->status));
+            $this->notifier->notify($project, 'status', 'Project marked as '.str_replace('_', ' ', $project->status), null, [
+                'type' => 'project.status_changed', 'subject' => $project, 'payload' => ['from' => $previousStatus, 'to' => $project->status],
+            ]);
+        }
+        if ($project->wasChanged('status') && $project->status === 'completed') {
+            $this->mailer->projectCompleted($project, $request->user());
         }
         if ($project->wasChanged(['name', 'description', 'start_date', 'due_date', 'revised_due_date'])) {
-            $this->notifier->notify($project, 'update', 'Project details updated', 'Delivery date: '.($project->revised_due_date ?? $project->due_date)?->format('j M Y').'.');
+            $this->notifier->notify($project, 'update', 'Project details updated', 'Delivery date: '.($project->revised_due_date ?? $project->due_date)?->format('j M Y').'.', [
+                'type' => 'project.details_changed', 'subject' => $project,
+                'payload' => ['changed' => array_keys($project->getChanges()), 'due_date' => ['from' => $previousDue, 'to' => $project->due_date?->toDateString()]],
+            ]);
         }
 
         $this->tracker->refresh($project);

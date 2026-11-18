@@ -22,10 +22,6 @@ There are **no passwords** for anyone, including the Super Admin.
 
 Rules: codes expire after 10 minutes, work once, allow 5 wrong attempts, and a new request invalidates the previous code. Omitting `workspace` selects the Super Admin account. A workspace member cannot sign in to another workspace, even with the same email. The auth endpoints are rate limited to 10 requests a minute per IP.
 
-### Temporary static code
-
-While testing, set `PLMS_STATIC_OTP=123456` in `.env`. Every sign-in (team, client and Super Admin) then accepts that one code and **no email is sent**. Empty the value to go back to real emailed codes. Never leave it set in production.
-
 ## Client portal
 
 A client signs in on the same workspace page (`/{workspace}`) with the email on their client record, then lands on `/app/portal`.

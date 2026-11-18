@@ -8,6 +8,7 @@ use App\Models\ChatEvaluation;
 use App\Models\Client;
 use App\Models\ClientDependency;
 use App\Models\ClientMessage;
+use App\Models\Plan;
 use App\Models\Project;
 use App\Models\Tenant;
 use App\Models\User;
@@ -45,6 +46,7 @@ class ClientCommunicationTest extends TestCase
 
         $this->admin = $this->makeMember(Role::OrgAdmin);
         $this->tenant = Tenant::find($this->admin->tenant_id);
+        $this->tenant->update(['plan_id' => Plan::where('code', 'enterprise')->value('id')]);
         $this->client = Client::factory()->forTenant($this->tenant)->create(['name' => 'Northwind', 'contact_person' => 'Nora', 'email' => 'nora@northwind.test', 'whatsapp_number' => '919876543210']);
         $this->project = Project::factory()->forTenant($this->tenant)->create(['name' => 'Customer Portal', 'client_id' => $this->client->id, 'start_date' => now()->subWeeks(4), 'due_date' => now()->addWeeks(4)]);
     }
@@ -124,7 +126,7 @@ class ClientCommunicationTest extends TestCase
 
     public function test_whatsapp_messages_are_sent_through_the_evolution_api(): void
     {
-        Http::fake(['evo.test/message/sendText/spiderplms' => Http::response(['key' => ['id' => 'EVO-OUT-1']])]);
+        Http::fake(['evo.test/message/sendText/spiderplms-'.$this->tenant->id => Http::response(['key' => ['id' => 'EVO-OUT-1']])]);
         $this->actingAsMember($this->admin);
 
         $draft = $this->postJson("/api/v1/tracker/projects/{$this->project->id}/messages/draft", ['channel' => 'whatsapp', 'reason' => 'progress_update'])
@@ -147,7 +149,7 @@ class ClientCommunicationTest extends TestCase
 
     public function test_the_whatsapp_webhook_needs_the_token_and_stores_client_replies_with_an_evaluation(): void
     {
-        $payload = ['event' => 'messages.upsert', 'instance' => 'spiderplms', 'data' => [
+        $payload = ['event' => 'messages.upsert', 'instance' => 'spiderplms-'.$this->tenant->id, 'data' => [
             'key' => ['remoteJid' => '919876543210@s.whatsapp.net', 'fromMe' => false, 'id' => 'EVO-IN-1'],
             'pushName' => 'Nora',
             'message' => ['conversation' => 'When will the login page be ready?'],
@@ -185,7 +187,7 @@ class ClientCommunicationTest extends TestCase
 
     public function test_the_webhook_understands_hidden_number_ids_and_extended_text(): void
     {
-        $payload = ['event' => 'MESSAGES_UPSERT', 'instance' => 'spiderplms', 'data' => [
+        $payload = ['event' => 'MESSAGES_UPSERT', 'instance' => 'spiderplms-'.$this->tenant->id, 'data' => [
             'key' => ['remoteJid' => '1234@lid', 'senderPn' => '919876543210@s.whatsapp.net', 'fromMe' => false, 'id' => 'EVO-LID'],
             'message' => ['extendedTextMessage' => ['text' => 'Replying with a quote']],
         ]];

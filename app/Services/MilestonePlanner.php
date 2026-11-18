@@ -103,6 +103,13 @@ class MilestonePlanner
             'title' => $m->title,
             'description' => $m->description,
             'sort_order' => $m->sort_order,
+            'assigned_to' => $m->assigned_to,
+            'assignee_name' => $m->assignee?->name,
+            'estimated_days' => $m->estimated_days,
+            'deliverables' => $m->deliverables ?? [],
+            'source' => $m->source,
+            'started_at' => $m->started_at?->toIso8601String(),
+            'completed_at' => $m->completed_at?->toIso8601String(),
             'status' => $m->status,
             'display_status' => $display,
             'timing' => $timing,
@@ -125,6 +132,8 @@ class MilestonePlanner
      */
     public function plan(Collection $milestones): array
     {
+        $milestones->loadMissing('assignee:id,name');
+
         $rows = $milestones->sortBy([['sort_order', 'asc'], ['id', 'asc']])->values()
             ->map(fn (ProjectMilestone $m, int $i) => ['number' => $i + 1] + $this->present($m))
             ->all();

@@ -102,3 +102,38 @@ export function saveBlob(blob: Blob, filename: string): void {
   a.remove()
   URL.revokeObjectURL(url)
 }
+
+const pad = (n: number) => String(n).padStart(2, '0')
+const toIso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const fromIso = (value: string) => {
+  const [y, m, d] = value.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+/** Today as YYYY-MM-DD in the browser's own time zone. */
+export const todayIso = () => toIso(new Date())
+
+/** The date of the Nth working day (Monday to Friday), counting `start` itself when it is a weekday. */
+export function workingDayNumber(start: string, n: number): string {
+  const day = fromIso(start)
+  while (isWeekend(day)) day.setDate(day.getDate() + 1)
+  for (let left = Math.max(1, n) - 1; left > 0; ) {
+    day.setDate(day.getDate() + 1)
+    if (!isWeekend(day)) left--
+  }
+  return toIso(day)
+}
+
+function isWeekend(day: Date): boolean {
+  return day.getDay() === 0 || day.getDay() === 6
+}
+
+/** Lays steps end to end from `start`: each gets its first and last working day. */
+export function sequenceWorkingDays(start: string, days: number[]): { from: string; to: string }[] {
+  let used = 0
+  return days.map((count) => {
+    const from = workingDayNumber(start, used + 1)
+    used += Math.max(1, count)
+    return { from, to: workingDayNumber(start, used) }
+  })
+}

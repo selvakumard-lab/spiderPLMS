@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, ListPlus, Pencil, Play, Plus, RotateCcw, Trash2, Undo2 } from 'lucide-react'
-import { Alert, Button, Card, CardHeader, EmptyState, Field, Input, Modal, Select } from '@/components/ui'
+import { Alert, Button, Card, CardHeader, DatePicker, EmptyState, Field, Input, Modal, Select } from '@/components/ui'
 import { ConfirmButton, Textarea } from '@/components/ui/extra'
 import { ProjectPlan } from '@/components/tracker/ProjectPlan'
 import { useToast } from '@/context/ToastContext'
@@ -102,8 +102,8 @@ export function PlanSection({ projectId, plan, stages }: { projectId: number; pl
                 {stages.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
               </Select>
             </Field>
-            <Field label="Planned start" htmlFor="m-start" error={errors.planned_start}><Input id="m-start" type="date" value={form.planned_start} onChange={(e) => set('planned_start', e.target.value)} /></Field>
-            <Field label="Deadline" htmlFor="m-due" error={errors.due_date}><Input id="m-due" type="date" value={form.due_date} invalid={!!errors.due_date} onChange={(e) => set('due_date', e.target.value)} /></Field>
+            <Field label="Planned start" htmlFor="m-start" error={errors.planned_start}><DatePicker id="m-start" value={form.planned_start} onChange={(e) => set('planned_start', e.target.value)} /></Field>
+            <Field label="Deadline" htmlFor="m-due" error={errors.due_date}><DatePicker id="m-due" value={form.due_date} invalid={!!errors.due_date} onChange={(e) => set('due_date', e.target.value)} /></Field>
           </div>
           <Field label="What happens in this step" htmlFor="m-desc" error={errors.description}><Textarea id="m-desc" rows={3} value={form.description} onChange={(e) => set('description', e.target.value)} /></Field>
         </div>

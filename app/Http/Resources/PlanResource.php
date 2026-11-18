@@ -23,6 +23,7 @@ class PlanResource extends JsonResource
             'max_users' => $this->max_users,
             'max_projects' => $this->max_projects,
             'storage_gb' => $this->storage_gb,
+            'whatsapp_chat' => (bool) $this->whatsapp_chat,
             'features' => $this->features ?? [],
         ];
     }

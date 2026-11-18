@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Mail\ClientUpdateMail;
 use App\Models\ActivityLog;
+use App\Models\Client;
 use App\Models\ClientMessage;
 use App\Models\Project;
 use App\Models\Tenant;
@@ -53,6 +54,27 @@ class ClientCommunicationService
         ]);
     }
 
+    /** Sends a chat message straight to a client's WhatsApp, with no draft step, and records it on their latest project. */
+    public function sendChat(Client $client, string $body, ?User $by = null): ClientMessage
+    {
+        $project = Project::where('client_id', $client->id)->orderByRaw("case when status = 'active' then 0 else 1 end")->latest('updated_at')->first();
+
+        $message = ClientMessage::create([
+            'tenant_id' => $client->tenant_id,
+            'project_id' => $project?->id,
+            'client_id' => $client->id,
+            'created_by' => $by?->id,
+            'channel' => 'whatsapp',
+            'direction' => 'out',
+            'reason' => 'custom',
+            'body' => trim($body),
+            'to_address' => $client->whatsapp_number,
+            'status' => 'draft',
+        ]);
+
+        return $this->send($message, $by);
+    }
+
     /** Sends the message and records the outcome on it. A failure is stored on the message, not thrown. */
     public function send(ClientMessage $message, ?User $by = null): ClientMessage
     {
@@ -76,7 +98,10 @@ class ClientCommunicationService
                 ));
                 $providerId = null;
             } else {
-                $providerId = $this->whatsapp->sendText($message->to_address, $message->body);
+                if (! $tenant->planAllows('whatsapp_chat')) {
+                    throw new \RuntimeException('WhatsApp chat is not included in your plan.');
+                }
+                $providerId = $this->whatsapp->forTenant($tenant)->sendText($message->to_address, $message->body);
             }
 
             $message->forceFill(['status' => 'sent', 'sent_at' => now(), 'error' => null, 'provider_message_id' => $providerId])->save();

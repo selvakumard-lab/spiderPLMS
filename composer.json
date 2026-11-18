@@ -12,6 +12,7 @@
         "laravel/sanctum": "^4.4",
         "laravel/tinker": "^3.0",
         "openspout/openspout": "^5.13",
+        "smalot/pdfparser": "^2.13",
         "spatie/laravel-permission": "^8.5"
     },
     "require-dev": {

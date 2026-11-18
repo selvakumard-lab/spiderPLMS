@@ -1,7 +1,7 @@
 import { api } from './api'
 import type {
   ProjectDetail, TrackedProject, TrackerDashboard, Activity, Meeting, ChangeRequest, ClientDependency, ProjectSummary, Client, ClientMessage, ChatEvaluation,
-  MessageChannel, MessageReason, MessageStatus, WorkspaceSettings, ProjectDocument, ChatMessage, ProjectPlan,
+  MessageChannel, MessageReason, MessageStatus, OnboardingAnalysis, WorkspaceSettings, ProjectDocument, ChatMessage, ProjectPlan, WhatsAppStatus, WhatsAppConversation, WhatsAppThread,
 } from '@/types/tracker'
 import type { PortalNotification, PortalProject, PortalProjectDetail } from '@/types/portal'
 import type { Country, Currency, Paginated, Plan, PlatformStats, Pricing, PublicConfig, Session, Tenant, TenantDetail, User } from '@/types'
@@ -51,6 +51,9 @@ export const adminApi = {
   plans: () => api.get<{ data: Plan[] }>('/admin/plans').then((r) => r.data.data),
   updatePlan: (id: number, body: Body) => api.patch<{ data: Plan }>(`/admin/plans/${id}`, body).then((r) => r.data.data),
   createPlan: (body: Body) => api.post<{ data: Plan }>('/admin/plans', body).then((r) => r.data.data),
+  /** Saves the whole country-price grid for every plan at once. Rows left out lose their fixed price. */
+  savePrices: (prices: { plan_id: number; country_code: string; price_monthly: number; price_yearly: number }[]) =>
+    api.put<{ data: Plan[] }>('/admin/plans/prices', { prices }).then((r) => r.data.data),
   deletePlan: (id: number) => api.delete(`/admin/plans/${id}`).then((r) => r.data),
   settings: () => api.get<{ data: Record<string, unknown> }>('/admin/settings').then((r) => r.data.data),
   updateSettings: (body: Body) => api.put<{ data: Record<string, unknown> }>('/admin/settings', body).then((r) => r.data.data),
@@ -62,6 +65,12 @@ export const trackerApi = {
   dashboard: () => api.get<TrackerDashboard>('/tracker/dashboard').then((r) => r.data),
   projects: (params: { search?: string; status?: string } = {}) => api.get<{ data: TrackedProject[] }>('/tracker/projects', { params: clean(params) }).then((r) => r.data.data),
   project: (id: number | string) => api.get<ProjectDetail>(`/tracker/projects/${id}`).then((r) => r.data),
+  /** Reads a requirement document (PDF, DOCX, TXT, MD) and proposes the project details, working days and steps. Creates nothing. */
+  analyseDocument: (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post<{ data: OnboardingAnalysis }>('/tracker/onboarding/analyse', form, { timeout: 120_000 }).then((r) => r.data.data)
+  },
   createProject: (body: Body) => api.post<{ data: TrackedProject }>('/tracker/projects', body).then((r) => r.data.data),
   updateProject: (id: number, body: Body) => api.patch<{ data: TrackedProject }>(`/tracker/projects/${id}`, body).then((r) => r.data.data),
   deleteProject: (id: number) => api.delete(`/tracker/projects/${id}`),
@@ -144,4 +153,15 @@ export const messagesApi = {
 export const workspaceApi = {
   settings: () => api.get<WorkspaceSettings>('/workspace/settings').then((r) => r.data),
   updateSettings: (body: Body) => api.put<WorkspaceSettings>('/workspace/settings', body).then((r) => r.data),
+}
+
+/** The workspace WhatsApp inbox (Enterprise plan): link a phone with a QR code, then chat with clients. */
+export const whatsappApi = {
+  status: () => api.get<WhatsAppStatus>('/whatsapp/status').then((r) => r.data),
+  connect: () => api.post<{ state: WhatsAppStatus['state']; qr: string | null }>('/whatsapp/connect').then((r) => r.data),
+  disconnect: () => api.post('/whatsapp/disconnect'),
+  conversations: (search?: string) =>
+    api.get<{ data: WhatsAppConversation[]; unread: number }>('/whatsapp/conversations', { params: clean({ search }) }).then((r) => r.data),
+  thread: (clientId: number) => api.get<WhatsAppThread>(`/whatsapp/conversations/${clientId}`).then((r) => r.data),
+  send: (clientId: number, body: string) => api.post<{ data: ClientMessage }>(`/whatsapp/conversations/${clientId}/messages`, { body }).then((r) => r.data.data),
 }

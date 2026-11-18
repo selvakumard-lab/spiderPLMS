@@ -31,7 +31,7 @@ use Illuminate\Support\Str;
  * Every date is relative to today, so the data always looks live. Run after DatabaseSeeder's platform seeders:
  *   php artisan db:seed --class=TestDataSeeder
  *
- * Every account signs in with an emailed one-time code; with PLMS_STATIC_OTP set (local) the code is that value.
+ * Every account signs in with an emailed one-time code.
  */
 class TestDataSeeder extends Seeder
 {
@@ -81,7 +81,7 @@ class TestDataSeeder extends Seeder
         });
 
         $context->set(null);
-        $this->command?->info('Test data ready. Workspace /'.self::WORKSPACE.' (one-time code: '.config('plms.static_otp', 'emailed').').');
+        $this->command?->info('Test data ready. Workspace /'.self::WORKSPACE.' (sign in with the emailed one-time code).');
     }
 
     private function createTeam(): void

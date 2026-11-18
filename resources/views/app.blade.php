@@ -13,7 +13,10 @@
         <meta name="csrf-token" content="{{ csrf_token() }}" />
         <meta name="description" content="{{ $plmsName }} — plan, deliver and bill every project from one multi-tenant workspace." />
         <title>{{ $plmsName }}</title>
-        <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}" />
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32.png') }}" />
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16.png') }}" />
+        <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
+        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
         <script>
             // Apply the saved (or platform-default) theme before first paint to avoid a light flash.
             (function () {

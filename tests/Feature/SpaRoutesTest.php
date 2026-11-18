@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\SystemSetting;
 use Tests\TestCase;
 
 /**
@@ -20,7 +21,7 @@ class SpaRoutesTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('<div id="root"></div>', false)
-            ->assertSee(config('app.name'));
+            ->assertSee(SystemSetting::get('app_name'));
     }
 
     public function test_deep_links_are_served_by_the_spa_shell(): void

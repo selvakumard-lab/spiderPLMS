@@ -72,6 +72,7 @@ class PublicController extends Controller
                 'max_users' => $plan->max_users,
                 'max_projects' => $plan->max_projects,
                 'storage_gb' => $plan->storage_gb,
+                'whatsapp_chat' => (bool) $plan->whatsapp_chat,
                 'features' => $plan->features ?? [],
             ];
         });

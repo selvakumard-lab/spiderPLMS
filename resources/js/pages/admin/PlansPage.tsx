@@ -4,16 +4,10 @@ import { Plus, Trash2, X } from 'lucide-react'
 import { useToast } from '@/context/ToastContext'
 import { errorMessage, fieldErrors } from '@/lib/api'
 import { adminApi } from '@/lib/endpoints'
-import { formatMoney } from '@/lib/utils'
-import { Alert, Badge, Button, Card, CountryChip, Field, Input, PageHeader, Select, Skeleton } from '@/components/ui'
+import { Alert, Badge, Button, Card, Field, Input, PageHeader, Skeleton } from '@/components/ui'
 import { ConfirmButton, Switch, Textarea } from '@/components/ui/extra'
-import type { Country, Currency, Plan } from '@/types'
-
-interface PriceRow {
-  country_code: string
-  monthly: string
-  yearly: string
-}
+import type { Plan } from '@/types'
+import { CountryPricing } from './CountryPricing'
 
 export default function PlansPage() {
   const plans = useQuery({ queryKey: ['admin', 'plans'], queryFn: adminApi.plans })
@@ -21,64 +15,51 @@ export default function PlansPage() {
   const currencies = useQuery({ queryKey: ['admin', 'currencies'], queryFn: adminApi.currencies })
   const [adding, setAdding] = useState(false)
 
-  const ref = { countries: (countries.data ?? []).filter((c) => c.is_active !== false), currencies: currencies.data ?? [] }
+  const activeCountries = (countries.data ?? []).filter((c) => c.is_active !== false)
 
   return (
     <>
       <PageHeader
         eyebrow="Platform"
         title="Plans & pricing"
-        description="Set each plan's base price in USD, then add a fixed price for any country in its own currency. Countries without a fixed price are converted from USD using the currency rate."
+        description="Set each plan's base price in USD and what it includes. Prices for other countries are converted automatically, and you can fix any of them in the Country pricing grid below."
         actions={!adding && <Button onClick={() => setAdding(true)}><Plus className="size-4" /> Add plan</Button>}
       />
       {plans.error && <Alert>{errorMessage(plans.error)}</Alert>}
       {adding && (
         <div className="mb-5">
-          <PlanForm ref_={ref} onDone={() => setAdding(false)} />
+          <PlanForm onDone={() => setAdding(false)} />
         </div>
       )}
       {plans.isLoading ? (
         <div className="grid gap-4 lg:grid-cols-3"><Skeleton className="h-[520px] rounded-2xl" /><Skeleton className="h-[520px] rounded-2xl" /><Skeleton className="h-[520px] rounded-2xl" /></div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-3 md:grid-cols-2">
-          {plans.data?.map((p) => <PlanForm key={p.id + JSON.stringify(p.prices) + p.price_monthly} plan={p} ref_={ref} />)}
+          {plans.data?.map((p) => <PlanForm key={p.id + p.price_monthly + p.price_yearly} plan={p} />)}
         </div>
+      )}
+      {plans.data && !countries.isLoading && !currencies.isLoading && (
+        <CountryPricing key={JSON.stringify(plans.data.map((p) => p.prices))} plans={plans.data} countries={activeCountries} currencies={currencies.data ?? []} />
       )}
     </>
   )
 }
 
-function PlanForm({ plan, ref_, onDone }: { plan?: Plan; ref_: { countries: Country[]; currencies: Currency[] }; onDone?: () => void }) {
+function PlanForm({ plan, onDone }: { plan?: Plan; onDone?: () => void }) {
   const toast = useToast()
   const queryClient = useQueryClient()
   const uid = plan?.id ?? 'new'
-  const decimalsOf = (countryCode: string): number => {
-    const code = ref_.countries.find((c) => c.code === countryCode)?.currency_code
-    return ref_.currencies.find((c) => c.code === code)?.decimals ?? 2
-  }
-  const currencyOf = (countryCode: string) => ref_.countries.find((c) => c.code === countryCode)?.currency_code ?? 'USD'
-
   const [form, setForm] = useState({
     name: plan?.name ?? '', description: plan?.description ?? '', monthly: plan ? String(plan.price_monthly / 100) : '', yearly: plan ? String(plan.price_yearly / 100) : '',
     max_users: plan?.max_users == null ? '' : String(plan.max_users), max_projects: plan?.max_projects == null ? '' : String(plan.max_projects), storage_gb: String(plan?.storage_gb ?? 5),
-    features: (plan?.features ?? []).join('\n'), is_active: plan?.is_active ?? true,
+    features: (plan?.features ?? []).join('\n'), is_active: plan?.is_active ?? true, whatsapp_chat: plan?.whatsapp_chat ?? false,
   })
-  const [rows, setRows] = useState<PriceRow[]>(
-    (plan?.prices ?? []).map((r) => {
-      const d = decimalsOf(r.country_code)
-      return { country_code: r.country_code, monthly: String(r.price_monthly / 10 ** d), yearly: String(r.price_yearly / 10 ** d) }
-    }),
-  )
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const body = () => ({
     name: form.name, description: form.description || null, price_monthly: Math.round(Number(form.monthly || 0) * 100), price_yearly: Math.round(Number(form.yearly || 0) * 100),
     max_users: form.max_users === '' ? null : Number(form.max_users), max_projects: form.max_projects === '' ? null : Number(form.max_projects), storage_gb: Number(form.storage_gb || 1),
-    features: form.features.split('\n').map((f) => f.trim()).filter(Boolean), is_active: form.is_active,
-    prices: rows.map((r) => {
-      const d = decimalsOf(r.country_code)
-      return { country_code: r.country_code, price_monthly: Math.round(Number(r.monthly || 0) * 10 ** d), price_yearly: Math.round(Number(r.yearly || 0) * 10 ** d) }
-    }),
+    features: form.features.split('\n').map((f) => f.trim()).filter(Boolean), is_active: form.is_active, whatsapp_chat: form.whatsapp_chat,
   })
 
   const save = useMutation({
@@ -98,9 +79,6 @@ function PlanForm({ plan, ref_, onDone }: { plan?: Plan; ref_: { countries: Coun
     onError: (e) => toast.error(errorMessage(e)),
   })
 
-  const free = ref_.countries.filter((c) => !rows.some((r) => r.country_code === c.code))
-  const setRow = (i: number, patch: Partial<PriceRow>) => setRows(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
-
   return (
     <Card className="flex flex-col p-5 sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -109,7 +87,10 @@ function PlanForm({ plan, ref_, onDone }: { plan?: Plan; ref_: { countries: Coun
           {plan && <Badge className="bg-slate-100 text-slate-600 ring-slate-200">{plan.tenants_count ?? 0} tenants</Badge>}
         </div>
         <div className="flex items-center gap-2">
-          <Switch checked={form.is_active} label="Active" onChange={(v) => setForm({ ...form, is_active: v })} />
+          <label className="flex items-center gap-2.5 text-[12.5px] font-semibold text-ink-700" title="Active plans can be chosen by new customers. Turn off to hide the plan from the pricing page and sign-up.">
+            {form.is_active ? 'Active' : 'Hidden'}
+            <Switch checked={form.is_active} label="Plan active" onChange={(v) => setForm({ ...form, is_active: v })} />
+          </label>
           {onDone && <button aria-label="Cancel" onClick={onDone} className="rounded-lg p-1.5 text-ink-500 hover:bg-slate-100"><X className="size-4" /></button>}
         </div>
       </div>
@@ -126,44 +107,19 @@ function PlanForm({ plan, ref_, onDone }: { plan?: Plan; ref_: { countries: Coun
           <Field label="Max projects" htmlFor={`p-p-${uid}`} hint="Blank = ∞"><Input id={`p-p-${uid}`} type="number" min={1} value={form.max_projects} onChange={(e) => setForm({ ...form, max_projects: e.target.value })} /></Field>
           <Field label="Storage GB" htmlFor={`p-s-${uid}`}><Input id={`p-s-${uid}`} type="number" min={1} value={form.storage_gb} onChange={(e) => setForm({ ...form, storage_gb: e.target.value })} /></Field>
         </div>
+        <div className="flex items-start justify-between gap-4 rounded-xl border border-line p-3.5">
+          <div className="min-w-0">
+            <p className="text-[13px] font-bold text-ink-900">WhatsApp chat</p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-ink-500">Workspaces on this plan can link their own WhatsApp number by scanning a QR code and chat with clients. Off = the WhatsApp page shows an upgrade message.</p>
+          </div>
+          <Switch checked={form.whatsapp_chat} onChange={(v) => setForm({ ...form, whatsapp_chat: v })} label="WhatsApp chat included in this plan" />
+        </div>
         <Field label="Features (one per line)" htmlFor={`p-f-${uid}`}><Textarea id={`p-f-${uid}`} rows={5} value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} /></Field>
 
-        <div className="rounded-xl border border-line p-3.5">
-          <div className="mb-2.5 flex items-center justify-between gap-2">
-            <p className="text-[13px] font-bold">Country prices</p>
-            <Select
-              aria-label="Add country price"
-              value=""
-              onChange={(e) => e.target.value && setRows([...rows, { country_code: e.target.value, monthly: '', yearly: '' }])}
-              className="h-9 w-auto min-w-[150px] rounded-lg py-0 text-[13px]"
-              disabled={!free.length}
-            >
-              <option value="">+ Add country…</option>
-              {free.map((c) => <option key={c.code} value={c.code}>{c.name} · {c.currency_code}</option>)}
-            </Select>
-          </div>
-          {rows.length === 0 && <p className="text-xs text-ink-500">No fixed prices — every country is converted from the USD base price.</p>}
-          <div className="grid gap-2.5">
-            {rows.map((r, i) => (
-              <div key={r.country_code} className="rounded-lg bg-slate-50 p-2.5">
-                <div className="mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-[13px] font-semibold">
-                    <CountryChip code={r.country_code} /> {ref_.countries.find((c) => c.code === r.country_code)?.name ?? r.country_code}
-                    <span className="text-brand-600">{currencyOf(r.country_code)}</span>
-                  </span>
-                  <button aria-label={`Remove ${r.country_code}`} onClick={() => setRows(rows.filter((_, idx) => idx !== i))} className="rounded-md p-1 text-ink-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="size-3.5" /></button>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input aria-label={`${r.country_code} monthly`} type="number" min={0} step="any" placeholder="Monthly" value={r.monthly} onChange={(e) => setRow(i, { monthly: e.target.value })} />
-                  <Input aria-label={`${r.country_code} yearly`} type="number" min={0} step="any" placeholder="Yearly" value={r.yearly} onChange={(e) => setRow(i, { yearly: e.target.value })} />
-                </div>
-                <p className="mt-1 text-[11px] text-ink-500">
-                  {formatMoney(Math.round(Number(r.monthly || 0) * 10 ** decimalsOf(r.country_code)), currencyOf(r.country_code), true)}/mo · {formatMoney(Math.round(Number(r.yearly || 0) * 10 ** decimalsOf(r.country_code)), currencyOf(r.country_code), true)}/yr
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <p className="rounded-xl bg-canvas px-3.5 py-3 text-[12.5px] text-ink-500">
+          {plan ? `${plan.prices?.length ?? 0} countries have a fixed price for this plan. ` : 'After you create the plan, set its prices for other countries in the Country pricing grid. '}
+          <a href="#country-pricing" className="font-semibold text-brand-700 hover:underline">Open the grid</a>
+        </p>
       </div>
 
       <div className="mt-5 flex gap-2">

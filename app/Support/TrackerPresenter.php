@@ -146,8 +146,12 @@ class TrackerPresenter
             'actor' => $e->actor,
             'actor_name' => $e->actor_name,
             'kind' => $e->kind,
+            'event_type' => $e->event_type,
             'title' => $e->title,
             'body' => $e->body,
+            'payload' => $e->payload,
+            'internal' => ! $e->visible_to_client,
+            'occurred_at' => ($e->occurred_at ?? $e->created_at)?->toIso8601String(),
             'created_at' => $e->created_at?->toIso8601String(),
         ];
     }

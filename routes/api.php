@@ -22,9 +22,11 @@ use App\Http\Controllers\Api\V1\Tracker\ClientMessageController;
 use App\Http\Controllers\Api\V1\Tracker\MeetingController;
 use App\Http\Controllers\Api\V1\Tracker\MilestoneController;
 use App\Http\Controllers\Api\V1\Tracker\ProjectDocumentController;
+use App\Http\Controllers\Api\V1\Tracker\ProjectOnboardingController;
 use App\Http\Controllers\Api\V1\Tracker\ProjectReportController;
 use App\Http\Controllers\Api\V1\Tracker\ProjectThreadController;
 use App\Http\Controllers\Api\V1\Tracker\ProjectTrackerController;
+use App\Http\Controllers\Api\V1\WhatsAppChatController;
 use App\Http\Controllers\Api\V1\WhatsAppWebhookController;
 use App\Http\Controllers\Api\V1\WorkspaceSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -78,6 +80,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::put('settings', [SystemSettingController::class, 'update'])->name('settings.update');
             Route::get('plans', [AdminPlanController::class, 'index'])->name('plans.index');
             Route::post('plans', [AdminPlanController::class, 'store'])->name('plans.store');
+            Route::put('plans/prices', [AdminPlanController::class, 'syncAllPrices'])->name('plans.prices');
             Route::patch('plans/{plan}', [AdminPlanController::class, 'update'])->name('plans.update');
             Route::delete('plans/{plan}', [AdminPlanController::class, 'destroy'])->name('plans.destroy');
         });
@@ -107,9 +110,20 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::get('workspace/settings', [WorkspaceSettingsController::class, 'show'])->name('workspace.settings.show');
             Route::put('workspace/settings', [WorkspaceSettingsController::class, 'update'])->name('workspace.settings.update');
 
+            // ---- WhatsApp inbox: status is open to every plan, the rest needs the plan's WhatsApp chat ----
+            Route::get('whatsapp/status', [WhatsAppChatController::class, 'status'])->name('whatsapp.status');
+            Route::middleware('plan.feature:whatsapp_chat')->prefix('whatsapp')->name('whatsapp.')->group(function (): void {
+                Route::post('connect', [WhatsAppChatController::class, 'connect'])->name('connect');
+                Route::post('disconnect', [WhatsAppChatController::class, 'disconnect'])->name('disconnect');
+                Route::get('conversations', [WhatsAppChatController::class, 'conversations'])->name('conversations');
+                Route::get('conversations/{client}', [WhatsAppChatController::class, 'thread'])->name('thread');
+                Route::post('conversations/{client}/messages', [WhatsAppChatController::class, 'send'])->name('send');
+            });
+
             // ---- Simplified project tracking ----
             Route::get('tracker/dashboard', [ProjectTrackerController::class, 'dashboard'])->name('tracker.dashboard');
             Route::get('tracker/projects', [ProjectTrackerController::class, 'index'])->name('tracker.projects.index');
+            Route::post('tracker/onboarding/analyse', [ProjectOnboardingController::class, 'analyse'])->middleware('throttle:10,1')->name('tracker.onboarding.analyse');
             Route::post('tracker/projects', [ProjectTrackerController::class, 'store'])->name('tracker.projects.store');
             Route::get('tracker/projects/{project}', [ProjectTrackerController::class, 'show'])->name('tracker.projects.show');
             Route::patch('tracker/projects/{project}', [ProjectTrackerController::class, 'update'])->name('tracker.projects.update');

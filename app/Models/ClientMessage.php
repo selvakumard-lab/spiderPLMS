@@ -7,14 +7,14 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'project_id', 'client_id', 'created_by', 'channel', 'direction', 'reason', 'subject', 'body', 'to_address', 'status', 'ai_generated', 'provider_message_id', 'error', 'sent_at'])]
+#[Fillable(['tenant_id', 'project_id', 'client_id', 'created_by', 'channel', 'direction', 'reason', 'subject', 'body', 'to_address', 'status', 'ai_generated', 'provider_message_id', 'error', 'sent_at', 'read_at'])]
 class ClientMessage extends Model
 {
     use BelongsToTenant;
 
     protected function casts(): array
     {
-        return ['ai_generated' => 'boolean', 'sent_at' => 'datetime'];
+        return ['ai_generated' => 'boolean', 'sent_at' => 'datetime', 'read_at' => 'datetime'];
     }
 
     /** @return BelongsTo<Project, $this> */

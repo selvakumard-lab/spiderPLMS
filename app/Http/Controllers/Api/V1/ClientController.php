@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\User;
+use App\Services\ClientMailer;
 use App\Support\TrackerPresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -52,7 +53,7 @@ class ClientController extends Controller
     }
 
     /** Gives the client a portal login: they sign in with a one-time code sent to the client's email. */
-    public function grantPortalAccess(Client $client): JsonResponse
+    public function grantPortalAccess(Request $request, Client $client, ClientMailer $mailer): JsonResponse
     {
         if (blank($client->email)) {
             throw ValidationException::withMessages(['email' => 'Add an email address to this client first. It is their portal login.']);
@@ -64,11 +65,16 @@ class ClientController extends Controller
             throw ValidationException::withMessages(['email' => 'This email already belongs to another account in your workspace. Use a different email for the client.']);
         }
 
-        User::firstOrCreate(['email' => $email, 'client_id' => $client->id], [
+        $portalUser = User::firstOrCreate(['email' => $email, 'client_id' => $client->id], [
             'name' => $client->contact_person ?: $client->name,
             'password' => Str::random(40),
             'status' => 'active',
         ]);
+
+        // Only a newly given access sends the welcome email; pressing the button again does not repeat it.
+        if ($portalUser->wasRecentlyCreated) {
+            $mailer->portalAccessGranted($client, $portalUser, $request->user());
+        }
 
         return response()->json(['data' => TrackerPresenter::client($client->loadCount('projects')->loadExists('portalUsers as has_portal_access'))]);
     }

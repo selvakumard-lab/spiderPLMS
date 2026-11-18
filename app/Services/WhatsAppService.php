@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Tenant;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -14,6 +15,25 @@ use Throwable;
  */
 class WhatsAppService
 {
+    private ?string $instanceName = null;
+
+    /** A copy of the service that talks through this workspace's own linked phone (its own Evolution instance). */
+    public function forTenant(Tenant $tenant): static
+    {
+        $copy = clone $this;
+        $copy->instanceName = $tenant->whatsappInstance();
+
+        return $copy;
+    }
+
+    /** The workspace id encoded in an instance name this app created, or null for any other instance. */
+    public function tenantIdFromInstance(string $instance): ?int
+    {
+        $prefix = (string) config('services.evolution.instance').'-';
+
+        return str_starts_with($instance, $prefix) && ctype_digit($rest = substr($instance, strlen($prefix))) ? (int) $rest : null;
+    }
+
     public function isConfigured(): bool
     {
         return filled(config('services.evolution.url')) && filled(config('services.evolution.key')) && filled(config('services.evolution.instance'));
@@ -66,6 +86,22 @@ class WhatsAppService
         return $response->successful() && collect((array) $response->json())->contains(fn ($i) => ($i['name'] ?? $i['instance']['instanceName'] ?? null) === $this->instance());
     }
 
+    /** The phone number linked to this instance (digits), or null when none is linked or it cannot be read. */
+    public function linkedNumber(): ?string
+    {
+        try {
+            $items = (array) $this->http()->timeout(8)->get('/instance/fetchInstances', ['instanceName' => $this->instance()])->json();
+        } catch (Throwable) {
+            return null;
+        }
+
+        $mine = collect($items)->first(fn ($i) => ($i['name'] ?? $i['instance']['instanceName'] ?? null) === $this->instance());
+        $jid = (string) ($mine['ownerJid'] ?? $mine['instance']['owner'] ?? '');
+        $digits = preg_replace('/\D/', '', explode('@', $jid)[0]);
+
+        return $digits === '' ? null : $digits;
+    }
+
     /** Creates this app's own instance. Other instances on the server are never touched. */
     public function createInstance(): void
     {
@@ -88,6 +124,12 @@ class WhatsAppService
                 'events' => ['MESSAGES_UPSERT'],
             ],
         ])->throw();
+    }
+
+    /** Unlinks the phone from this instance (the instance itself stays, so a new QR can be scanned later). */
+    public function logout(): void
+    {
+        $this->http()->delete('/instance/logout/'.$this->instance())->throw();
     }
 
     /** The QR code (base64 image) to link a phone, or null when already linked. */
@@ -121,7 +163,7 @@ class WhatsAppService
     {
         $event = strtolower(str_replace('_', '.', (string) ($payload['event'] ?? '')));
 
-        if ($event !== 'messages.upsert' || ($payload['instance'] ?? $this->instance()) !== $this->instance()) {
+        if ($event !== 'messages.upsert') {
             return [];
         }
 
@@ -154,7 +196,7 @@ class WhatsAppService
 
     private function instance(): string
     {
-        return (string) config('services.evolution.instance');
+        return $this->instanceName ?? (string) config('services.evolution.instance');
     }
 
     private function http(): PendingRequest

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ExternalLink, Paperclip, Pencil, Plus, Trash2, Users, X } from 'lucide-react'
-import { Alert, Button, Card, CardHeader, EmptyState, Field, Input, Modal } from '@/components/ui'
+import { Alert, Button, Card, CardHeader, DatePicker, EmptyState, Field, Input, Modal } from '@/components/ui'
 import { ConfirmButton, Textarea } from '@/components/ui/extra'
 import { todayISO } from '@/components/tracker/shared'
 import { useToast } from '@/context/ToastContext'
@@ -117,7 +117,7 @@ export function MeetingSection({ projectId, meetings }: { projectId: number; mee
         <div className="space-y-4">
           {error && <Alert>{error}</Alert>}
           <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
-            <Field label="Date" htmlFor="m-date" error={errors.meeting_date}><Input id="m-date" type="date" value={form.meeting_date} onChange={(e) => set('meeting_date', e.target.value)} /></Field>
+            <Field label="Date" htmlFor="m-date" error={errors.meeting_date}><DatePicker id="m-date" value={form.meeting_date} onChange={(e) => set('meeting_date', e.target.value)} /></Field>
             <Field label="Title" htmlFor="m-title" error={errors.title}><Input id="m-title" autoFocus value={form.title} invalid={!!errors.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Kick-off call" /></Field>
           </div>
           <Field label="Meeting details" htmlFor="m-details"><Textarea id="m-details" rows={3} value={form.details} onChange={(e) => set('details', e.target.value)} /></Field>

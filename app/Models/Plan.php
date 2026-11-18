@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['code', 'name', 'description', 'price_monthly', 'price_yearly', 'currency', 'max_users', 'max_projects', 'storage_gb', 'features', 'is_active', 'sort_order'])]
+#[Fillable(['code', 'name', 'description', 'price_monthly', 'price_yearly', 'currency', 'max_users', 'max_projects', 'storage_gb', 'whatsapp_chat', 'features', 'is_active', 'sort_order'])]
 class Plan extends Model
 {
     protected function casts(): array
@@ -15,6 +15,7 @@ class Plan extends Model
         return [
             'features' => 'array',
             'is_active' => 'boolean',
+            'whatsapp_chat' => 'boolean',
         ];
     }
 

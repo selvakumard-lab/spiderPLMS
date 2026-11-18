@@ -44,16 +44,17 @@ class WorkspaceSettingsController extends Controller
     /** @return array<string, mixed> */
     private function payload(Request $request, DeepSeekService $ai, WhatsAppService $whatsapp): array
     {
-        $tenant = app(TenantContext::class)->get();
+        $tenant = app(TenantContext::class)->get()->loadMissing('plan');
 
         return [
             'data' => $tenant->workspaceSettings(),
             'can_edit' => $request->user()->can('settings.manage'),
             'ai_configured' => $ai->isConfigured(),
             'whatsapp' => [
+                'allowed' => $tenant->planAllows('whatsapp_chat'),
                 'configured' => $whatsapp->isConfigured(),
-                'state' => $whatsapp->connectionState(),
-                'instance' => config('services.evolution.instance'),
+                'state' => $tenant->planAllows('whatsapp_chat') ? $whatsapp->forTenant($tenant)->connectionState() : 'unavailable',
+                'instance' => $tenant->whatsappInstance(),
             ],
         ];
     }

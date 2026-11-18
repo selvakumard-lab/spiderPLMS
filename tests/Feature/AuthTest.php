@@ -122,21 +122,6 @@ class AuthTest extends TestCase
         $this->postJson('/api/v1/auth/otp/verify', ['workspace' => $tenant->slug, 'email' => $member->email, 'code' => '000000'])->assertJsonValidationErrors(['code' => 'attempts left']);
     }
 
-    public function test_the_temporary_static_code_signs_everyone_in_without_sending_email(): void
-    {
-        config(['plms.static_otp' => '123456']);
-        $user = $this->makeMember(Role::Developer);
-        $slug = Tenant::find($user->tenant_id)->slug;
-        Mail::fake();
-
-        $this->postJson('/api/v1/auth/otp/request', ['workspace' => $slug, 'email' => $user->email])->assertOk();
-        Mail::assertNothingSent();
-
-        $this->postJson('/api/v1/auth/otp/verify', ['workspace' => $slug, 'email' => $user->email, 'code' => '654321'])->assertJsonValidationErrors('code');
-        $this->postJson('/api/v1/auth/otp/verify', ['workspace' => $slug, 'email' => $user->email, 'code' => '123456'])
-            ->assertOk()->assertJsonPath('user.id', $user->id);
-    }
-
     public function test_the_same_email_cannot_use_an_otp_for_a_different_workspace(): void
     {
         $user = $this->makeMember(Role::Developer);

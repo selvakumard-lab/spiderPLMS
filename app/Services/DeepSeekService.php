@@ -25,14 +25,14 @@ class DeepSeekService
      *
      * @return array<string, mixed>|null
      */
-    public function completeJson(string $system, string $prompt, float $temperature = 0.3): ?array
+    public function completeJson(string $system, string $prompt, float $temperature = 0.3, int $timeout = 30): ?array
     {
         if (! $this->isConfigured()) {
             return null;
         }
 
         try {
-            $response = Http::withToken((string) config('services.deepseek.key'))->timeout(30)->acceptJson()
+            $response = Http::withToken((string) config('services.deepseek.key'))->timeout($timeout)->acceptJson()
                 ->post(rtrim((string) config('services.deepseek.base_url'), '/').'/chat/completions', [
                     'model' => config('services.deepseek.model'),
                     'messages' => [['role' => 'system', 'content' => $system], ['role' => 'user', 'content' => $prompt]],

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Alert, Button, Card, CardHeader, Field, Input, Progress } from '@/components/ui'
+import { Alert, Button, Card, CardHeader, DatePicker, Field, Progress } from '@/components/ui'
 import { STATUS_META, TrackingBadge } from '@/components/tracker/shared'
 import { useToast } from '@/context/ToastContext'
 import { errorMessage } from '@/lib/api'
@@ -73,7 +73,7 @@ export function OverallStatus({ project, summary }: { project: TrackedProject; s
             Approved requirements add {summary.additional_days_approved} working day(s) automatically. You can also set the revised date by hand; the original date is always kept.
           </p>
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="sm:w-56"><Field label="Revised completion date" htmlFor="revised"><Input id="revised" type="date" value={revised} onChange={(e) => setRevised(e.target.value)} /></Field></div>
+            <div className="sm:w-56"><Field label="Revised completion date" htmlFor="revised"><DatePicker id="revised" value={revised} onChange={(e) => setRevised(e.target.value)} /></Field></div>
             <Button variant="secondary" loading={adjust.isPending} onClick={() => adjust.mutate()}>Save revised date</Button>
           </div>
         </div>

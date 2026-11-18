@@ -16,6 +16,7 @@ const ProjectPage = lazy(() => import('@/pages/tracker/ProjectPage'))
 const ProjectsPage = lazy(() => import('@/pages/tracker/ProjectsPage'))
 const ClientsPage = lazy(() => import('@/pages/tracker/ClientsPage'))
 const RemindersPage = lazy(() => import('@/pages/tracker/RemindersPage'))
+const WhatsAppPage = lazy(() => import('@/pages/tracker/WhatsAppPage'))
 const WorkspaceSettingsPage = lazy(() => import('@/pages/tracker/WorkspaceSettingsPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
       { path: 'projects', element: workspace(<ProjectsPage />) },
       { path: 'projects/:id', element: workspace(<ProjectPage />) },
       { path: 'clients', element: workspace(<ClientsPage />) },
+      { path: 'whatsapp', element: workspace(<WhatsAppPage />) },
       { path: 'reminders', element: workspace(<RemindersPage />) },
       { path: 'settings', element: workspace(<WorkspaceSettingsPage />) },
       { path: 'profile', element: page(<ProfilePage />) },

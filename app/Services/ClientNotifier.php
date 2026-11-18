@@ -9,7 +9,10 @@ use App\Models\ProjectEvent;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\ClientProjectUpdate;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 /**
  * Two-way project notifications. Every change is recorded on the project timeline, then the other side is told:
@@ -18,17 +21,17 @@ use Illuminate\Support\Facades\Notification;
 class ClientNotifier
 {
     /** A team action: tell the client, in their portal, that something changed. */
-    public function notify(Project $project, string $kind, string $title, ?string $body = null): void
+    public function notify(Project $project, string $kind, string $title, ?string $body = null, array $meta = []): void
     {
-        $this->record($project, $kind, $title, $body);
+        $this->record($project, $kind, $title, $body, $meta);
         $this->alertClient($project, $kind, $title, $body);
         $this->queueEmailDraft($project, $title, $body);
     }
 
     /** A client action: tell every active team member of the workspace. */
-    public function notifyTeam(Project $project, string $kind, string $title, ?string $body = null): void
+    public function notifyTeam(Project $project, string $kind, string $title, ?string $body = null, array $meta = []): void
     {
-        $this->record($project, $kind, $title, $body);
+        $this->record($project, $kind, $title, $body, $meta);
         $this->alertTeam($project, $kind, $title, $body);
     }
 
@@ -80,10 +83,18 @@ class ClientNotifier
         }
     }
 
-    /** Adds a line to the project timeline; the person acting is the signed-in user. */
-    public function record(Project $project, string $kind, string $title, ?string $body = null): ProjectEvent
+    /**
+     * Adds a line to the project timeline; the person acting is the signed-in user.
+     *
+     * `$meta` makes it a ledger entry: `type` (for example `milestone.completed`), `subject` (the record it is about),
+     * `payload` (old and new values), `at` (when it really happened) and `internal` (hide it from the client portal).
+     *
+     * @param  array{type?: string, subject?: Model, payload?: array<string, mixed>, at?: Carbon, internal?: bool}  $meta
+     */
+    public function record(Project $project, string $kind, string $title, ?string $body = null, array $meta = []): ProjectEvent
     {
         $actor = auth()->user();
+        $subject = $meta['subject'] ?? null;
 
         return ProjectEvent::withoutGlobalScopes()->create([
             'tenant_id' => $project->tenant_id,
@@ -94,6 +105,12 @@ class ClientNotifier
             'kind' => $kind,
             'title' => $title,
             'body' => $body,
+            'event_type' => $meta['type'] ?? null,
+            'occurred_at' => $meta['at'] ?? now(),
+            'subject_type' => $subject !== null ? Str::snake(class_basename($subject)) : null,
+            'subject_id' => $subject?->getKey(),
+            'payload' => $meta['payload'] ?? null,
+            'visible_to_client' => ! ($meta['internal'] ?? false),
         ]);
     }
 

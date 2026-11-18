@@ -1,4 +1,4 @@
-import { useEffect, type HTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { useEffect, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { cn, initials } from '@/lib/utils'
 
@@ -97,13 +97,7 @@ export function Input({ className, invalid, ...rest }: InputHTMLAttributes<HTMLI
   return <input className={cn('input', invalid && 'border-rose-400 focus:border-rose-500 focus:ring-rose-100', className)} {...rest} />
 }
 
-export function Select({ className, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select className={cn('input appearance-none bg-[url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2020%2020%27%20fill=%27%2364748b%27%3E%3Cpath%20d=%27M5.23%207.21a.75.75%200%20011.06.02L10%2011.17l3.71-3.94a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%27/%3E%3C/svg%3E")] bg-[length:18px] bg-[right_0.75rem_center] bg-no-repeat pr-10', className)} {...rest}>
-      {children}
-    </select>
-  )
-}
+export { Select, DatePicker } from './pickers'
 
 /* ---------- Feedback ---------- */
 export function Spinner({ className }: { className?: string }) {

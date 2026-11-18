@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\Role;
 use App\Mail\ClientUpdateMail;
+use App\Mail\LoginCodeMail;
 use App\Models\Client;
 use App\Models\ClientMessage;
 use App\Models\Project;
@@ -76,11 +77,17 @@ class ClientPortalTest extends TestCase
 
     public function test_a_client_signs_in_with_the_workspace_code_and_is_flagged_as_a_client(): void
     {
-        config(['plms.static_otp' => '123456']);
         $this->portalUser();
+        Mail::fake();
 
         $this->postJson('/api/v1/auth/otp/request', ['workspace' => $this->tenant->slug, 'email' => 'casey@acme.test'])->assertOk();
-        $this->postJson('/api/v1/auth/otp/verify', ['workspace' => $this->tenant->slug, 'email' => 'casey@acme.test', 'code' => '123456'])
+        $code = null;
+        Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code): bool {
+            $code = $mail->code;
+
+            return $mail->hasTo('casey@acme.test');
+        });
+        $this->postJson('/api/v1/auth/otp/verify', ['workspace' => $this->tenant->slug, 'email' => 'casey@acme.test', 'code' => $code])
             ->assertOk()->assertJsonPath('user.is_client', true);
     }
 

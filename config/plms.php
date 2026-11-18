@@ -18,12 +18,6 @@ return [
     'otp_ttl_minutes' => 10,
 
     /*
-     * TEMPORARY: when set, every sign-in accepts this fixed 6-digit code and no email is sent.
-     * Leave empty (the default) to send real one-time codes. Never set this in production.
-     */
-    'static_otp' => env('PLMS_STATIC_OTP'),
-
-    /*
      * Workspace slugs that cannot be registered (they collide with platform sub-domains).
      */
     'reserved_slugs' => ['login', 'register', 'sa', 'superadmin', 'superAdmin', 'logout', 'public', 'storage', 'build', 'pricing', 'www', 'app', 'api', 'admin', 'mail', 'docs', 'status', 'billing', 'support', 'help'],

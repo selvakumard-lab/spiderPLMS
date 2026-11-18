@@ -111,6 +111,18 @@ class Tenant extends Model
         return $this->status->allowsAccess();
     }
 
+    /** Whether the purchased plan includes a capability, such as `whatsapp_chat`. */
+    public function planAllows(string $feature): bool
+    {
+        return (bool) $this->plan?->{$feature};
+    }
+
+    /** The Evolution API instance that belongs to this workspace (one linked phone per workspace). */
+    public function whatsappInstance(): string
+    {
+        return config('services.evolution.instance').'-'.$this->id;
+    }
+
     /**
      * Whether the plan allows one more record of the given kind ("users" or "projects").
      */

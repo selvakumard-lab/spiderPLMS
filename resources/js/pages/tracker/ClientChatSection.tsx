@@ -54,7 +54,7 @@ export function ClientChatSection({ projectId, clientName }: { projectId: number
       <div className="space-y-4 p-5 sm:p-6">
         {isLoading ? <Skeleton className="h-32" /> : (
           <>
-            {data && !data.configured && <Alert tone="info">WhatsApp is not connected on the platform yet, so messages cannot be sent or received. Email drafts work now.</Alert>}
+            {data && !data.configured && <Alert tone="info">WhatsApp chat is not available for this workspace yet: it needs the Enterprise plan and a linked phone (WhatsApp page). Email drafts work now.</Alert>}
 
             {evaluation && (
               <div className="rounded-xl border border-line bg-canvas p-4">

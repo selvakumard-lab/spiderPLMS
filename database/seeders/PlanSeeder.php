@@ -28,8 +28,8 @@ class PlanSeeder extends Seeder
                 'code' => 'enterprise', 'name' => 'Enterprise', 'sort_order' => 3,
                 'description' => 'For organisations that need control, scale and compliance.',
                 'price_monthly' => 9900, 'price_yearly' => 99000,
-                'max_users' => null, 'max_projects' => null, 'storage_gb' => 1000,
-                'features' => ['Everything in Growth', 'Unlimited users', 'Custom domain & SSO', 'Audit log export', 'Dedicated success manager', '99.9% uptime SLA'],
+                'max_users' => null, 'max_projects' => null, 'storage_gb' => 1000, 'whatsapp_chat' => true,
+                'features' => ['Everything in Growth', 'Unlimited users', 'WhatsApp chat — scan a QR to link your own number', 'Custom domain & SSO', 'Audit log export', 'Dedicated success manager', '99.9% uptime SLA'],
             ],
         ];
 

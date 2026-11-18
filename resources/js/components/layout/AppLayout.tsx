@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
-import { ChevronDown, Eye, LogOut, Megaphone, Menu, Settings2, UserRound, X } from 'lucide-react'
+import { ChevronDown, Eye, Lock, LogOut, Megaphone, Menu, Settings2, UserRound, X } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useConfig } from '@/context/ConfigContext'
 import { ROLE_LABELS } from '@/lib/constants'
@@ -101,7 +101,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             <div key={section.title} className="mb-5">
               <div className="px-3 pb-1.5 text-[11px] font-bold tracking-wider text-ink-400 uppercase">{section.title}</div>
               <ul className="space-y-0.5">
-                {items.map(({ to, label, icon: Icon, end }) => (
+                {items.map(({ to, label, icon: Icon, end, feature }) => (
                   <li key={to}>
                     <NavLink
                       to={to}
@@ -117,7 +117,8 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                       {({ isActive }) => (
                         <>
                           <Icon className={cn('size-[18px] shrink-0', isActive ? 'text-brand-600' : 'text-ink-400 group-hover:text-ink-700')} />
-                          {label}
+                          <span className="flex-1">{label}</span>
+                          {feature && !tenant?.plan?.[feature] && <Lock className="size-3.5 text-ink-400" aria-label="Not in your plan" />}
                         </>
                       )}
                     </NavLink>

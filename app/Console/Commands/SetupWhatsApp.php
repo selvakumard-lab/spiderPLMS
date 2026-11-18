@@ -2,25 +2,40 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Tenant;
 use App\Services\WhatsAppService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Throwable;
 
-#[Signature('plms:whatsapp-setup {--qr : Save the QR code to storage/app/whatsapp-qr.html so a phone can be linked}')]
-#[Description('Create this app\'s Evolution API instance (if missing) and register the incoming-message webhook')]
+#[Signature('plms:whatsapp-setup {tenant : Workspace id or slug} {--qr : Save the QR code to storage/app/whatsapp-qr.html so a phone can be linked}')]
+#[Description('Create a workspace\'s own Evolution API instance (if missing) and register the incoming-message webhook. Workspaces can also do this themselves by scanning the QR code on their WhatsApp page.')]
 class SetupWhatsApp extends Command
 {
-    public function handle(WhatsAppService $whatsapp): int
+    public function handle(WhatsAppService $base): int
     {
-        if (! $whatsapp->isConfigured()) {
-            $this->error('Set EVOLUTION_API_URL, EVOLUTION_API_KEY and EVOLUTION_INSTANCE in .env first.');
+        if (! $base->isConfigured()) {
+            $this->error('Set EVOLUTION_API_URL, EVOLUTION_API_KEY and EVOLUTION_INSTANCE (the instance name prefix) in .env first.');
 
             return self::FAILURE;
         }
 
-        $instance = config('services.evolution.instance');
+        $reference = (string) $this->argument('tenant');
+        $tenant = Tenant::query()->with('plan')->where(ctype_digit($reference) ? 'id' : 'slug', $reference)->first();
+
+        if ($tenant === null) {
+            $this->error("No workspace matches '{$reference}'.");
+
+            return self::FAILURE;
+        }
+
+        if (! $tenant->planAllows('whatsapp_chat')) {
+            $this->warn("{$tenant->name}'s plan does not include WhatsApp chat; the workspace cannot use it until it is upgraded.");
+        }
+
+        $whatsapp = $base->forTenant($tenant);
+        $instance = $tenant->whatsappInstance();
 
         try {
             if ($whatsapp->instanceExists()) {
@@ -46,7 +61,7 @@ class SetupWhatsApp extends Command
             file_put_contents($path, '<img alt="Scan with WhatsApp" src="'.e($qr).'" style="width:320px">');
             $this->info("Open {$path} and scan it: WhatsApp > Linked devices > Link a device.");
         } elseif ($state !== 'open') {
-            $this->warn('Not linked to a phone yet. Run again with --qr, or open the Evolution manager and scan the QR code.');
+            $this->warn('Not linked to a phone yet. Run again with --qr, or let the workspace admin scan the QR code on the WhatsApp page.');
         }
 
         return self::SUCCESS;

@@ -12,6 +12,7 @@ export interface Plan {
   max_users: number | null
   max_projects: number | null
   storage_gb: number
+  whatsapp_chat?: boolean
   features: string[]
   is_active?: boolean
   tenants_count?: number

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, Hourglass, Pencil, Plus, Trash2 } from 'lucide-react'
-import { Alert, Badge, Button, Card, CardHeader, EmptyState, Field, Input, Modal } from '@/components/ui'
+import { Alert, Badge, Button, Card, CardHeader, DatePicker, EmptyState, Field, Input, Modal } from '@/components/ui'
 import { ConfirmButton, Textarea } from '@/components/ui/extra'
 import { todayISO } from '@/components/tracker/shared'
 import { useToast } from '@/context/ToastContext'
@@ -99,9 +99,9 @@ export function DependencySection({ projectId, items }: { projectId: number; ite
           <Field label="What is needed from the client" htmlFor="d-title" error={errors.title}><Input id="d-title" autoFocus value={form.title} invalid={!!errors.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Brand logo files" /></Field>
           <Field label="Notes" htmlFor="d-desc"><Textarea id="d-desc" rows={2} value={form.description} onChange={(e) => set('description', e.target.value)} /></Field>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Requested on" htmlFor="d-req" error={errors.requested_on}><Input id="d-req" type="date" value={form.requested_on} onChange={(e) => set('requested_on', e.target.value)} /></Field>
-            <Field label="Expected by" htmlFor="d-exp" error={errors.expected_on}><Input id="d-exp" type="date" value={form.expected_on} onChange={(e) => set('expected_on', e.target.value)} /></Field>
-            <Field label="Received on" htmlFor="d-rec" error={errors.received_on}><Input id="d-rec" type="date" value={form.received_on} onChange={(e) => set('received_on', e.target.value)} /></Field>
+            <Field label="Requested on" htmlFor="d-req" error={errors.requested_on}><DatePicker id="d-req" value={form.requested_on} onChange={(e) => set('requested_on', e.target.value)} /></Field>
+            <Field label="Expected by" htmlFor="d-exp" error={errors.expected_on}><DatePicker id="d-exp" value={form.expected_on} onChange={(e) => set('expected_on', e.target.value)} /></Field>
+            <Field label="Received on" htmlFor="d-rec" error={errors.received_on}><DatePicker id="d-rec" value={form.received_on} onChange={(e) => set('received_on', e.target.value)} /></Field>
           </div>
         </div>
       </Modal>

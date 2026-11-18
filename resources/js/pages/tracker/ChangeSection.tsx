@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, FilePlus2, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react'
-import { Alert, Badge, Button, Card, CardHeader, EmptyState, Field, Input, Modal } from '@/components/ui'
+import { Alert, Badge, Button, Card, CardHeader, DatePicker, EmptyState, Field, Input, Modal } from '@/components/ui'
 import { ConfirmButton, Textarea } from '@/components/ui/extra'
 import { todayISO } from '@/components/tracker/shared'
 import { useToast } from '@/context/ToastContext'
@@ -102,7 +102,7 @@ export function ChangeSection({ projectId, changes }: { projectId: number; chang
           <Field label="Requirement" htmlFor="c-title" error={errors.title}><Input id="c-title" autoFocus value={form.title} invalid={!!errors.title} onChange={(e) => set('title', e.target.value)} /></Field>
           <Field label="Requested changes" htmlFor="c-desc"><Textarea id="c-desc" rows={3} value={form.description} onChange={(e) => set('description', e.target.value)} /></Field>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Submitted on" htmlFor="c-date" error={errors.submitted_on}><Input id="c-date" type="date" value={form.submitted_on} onChange={(e) => set('submitted_on', e.target.value)} /></Field>
+            <Field label="Submitted on" htmlFor="c-date" error={errors.submitted_on}><DatePicker id="c-date" value={form.submitted_on} onChange={(e) => set('submitted_on', e.target.value)} /></Field>
             <Field label="Extra working days" htmlFor="c-days" error={errors.additional_days}><Input id="c-days" type="number" min={0} value={form.additional_days} onChange={(e) => set('additional_days', e.target.value)} /></Field>
             <Field label="Extra hours" htmlFor="c-hours" error={errors.additional_hours}><Input id="c-hours" type="number" min={0} step="0.5" value={form.additional_hours} onChange={(e) => set('additional_hours', e.target.value)} /></Field>
           </div>

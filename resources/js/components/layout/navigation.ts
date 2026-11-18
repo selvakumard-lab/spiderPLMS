@@ -1,4 +1,4 @@
-import { Bell, BellRing, Building2, Coins, FolderKanban, Globe, LayoutDashboard, LayoutGrid, Settings, SlidersHorizontal, Tags, Users, type LucideIcon } from 'lucide-react'
+import { Bell, BellRing, Building2, Coins, FolderKanban, Globe, LayoutDashboard, LayoutGrid, MessageCircle, Settings, SlidersHorizontal, Tags, Users, type LucideIcon } from 'lucide-react'
 
 export interface NavItem {
   label: string
@@ -8,6 +8,8 @@ export interface NavItem {
   /** Visible to everyone signed in to a workspace (no permission needed). */
   always?: boolean
   end?: boolean
+  /** A plan capability the item belongs to; the item stays visible but shows a lock when the plan lacks it. */
+  feature?: 'whatsapp_chat'
 }
 
 export interface NavSection {
@@ -45,6 +47,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Dashboard', to: '/app', icon: LayoutDashboard, end: true },
       { label: 'Projects', to: '/app/projects', icon: FolderKanban },
       { label: 'Clients', to: '/app/clients', icon: Users },
+      { label: 'WhatsApp', to: '/app/whatsapp', icon: MessageCircle, feature: 'whatsapp_chat', always: true },
       { label: 'Notifications', to: '/app/notifications', icon: Bell },
       { label: 'Reminders & Alerts', to: '/app/reminders', icon: BellRing },
       { label: 'Settings', to: '/app/settings', icon: Settings },

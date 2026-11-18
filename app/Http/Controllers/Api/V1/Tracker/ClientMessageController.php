@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Services\ChatEvaluationService;
 use App\Services\ClientCommunicationService;
 use App\Services\WhatsAppService;
+use App\Support\Tenancy\TenantContext;
 use App\Support\TrackerPresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,8 @@ class ClientMessageController extends Controller
             'instruction' => ['nullable', 'string', 'max:1000'],
             'body' => ['nullable', 'string', 'max:5000'],
         ]);
+
+        abort_if($data['channel'] === 'whatsapp' && ! app(TenantContext::class)->get()->planAllows('whatsapp_chat'), 402, 'WhatsApp chat is not included in your plan. Upgrade to message clients on WhatsApp.');
 
         $message = $this->communication->draft($project, $data['channel'], $data['reason'], $data['instruction'] ?? null, $request->user(), $data['body'] ?? null);
 
@@ -89,7 +92,7 @@ class ClientMessageController extends Controller
         $evaluation = ChatEvaluation::where('project_id', $project->id)->latest('id')->first();
 
         return response()->json([
-            'configured' => $whatsapp->isConfigured(),
+            'configured' => $whatsapp->isConfigured() && app(TenantContext::class)->get()->planAllows('whatsapp_chat'),
             'messages' => $messages->map(fn (ClientMessage $m) => TrackerPresenter::message($m)),
             'evaluation' => $evaluation ? TrackerPresenter::evaluation($evaluation) : null,
         ]);

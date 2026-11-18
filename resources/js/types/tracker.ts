@@ -110,6 +110,13 @@ export interface Milestone {
   title: string
   description: string | null
   sort_order: number
+  assigned_to: number | null
+  assignee_name: string | null
+  estimated_days: number | null
+  deliverables: string[]
+  source: 'manual' | 'default' | 'ai'
+  started_at: string | null
+  completed_at: string | null
   status: 'pending' | 'in_progress' | 'completed'
   /** What to show: a step past its deadline that is not complete reads as "delayed". */
   display_status: MilestoneDisplayStatus
@@ -164,8 +171,14 @@ export interface ProjectEvent {
   actor: 'team' | 'client'
   actor_name: string | null
   kind: 'step' | 'status' | 'stage' | 'document' | 'request' | 'requirement' | 'meeting' | 'update' | 'message'
+  /** Machine-readable ledger type such as `milestone.completed`; null for older lines. */
+  event_type?: string | null
   title: string
   body: string | null
+  payload?: Record<string, unknown> | null
+  /** Internal ledger lines are never shown in the client portal. */
+  internal?: boolean
+  occurred_at?: string | null
   created_at: string
 }
 
@@ -237,5 +250,62 @@ export interface WorkspaceSettings {
   data: { knowledge_base: string; tone: 'professional' | 'friendly' | 'formal'; sender_name: string; email_signature: string; auto_draft: boolean; email_updates: boolean }
   can_edit: boolean
   ai_configured: boolean
-  whatsapp: { configured: boolean; state: string; instance: string }
+  whatsapp: { allowed: boolean; configured: boolean; state: string; instance: string }
+}
+
+export interface WhatsAppStatus {
+  allowed: boolean
+  plan: string | null
+  configured: boolean
+  /** open = a phone is linked; close/connecting = scan the QR; unavailable = not on the plan; unreachable = server down. */
+  state: 'open' | 'close' | 'connecting' | 'unavailable' | 'unreachable' | 'unconfigured' | 'unknown'
+  number: string | null
+}
+
+export interface WhatsAppConversation {
+  client_id: number
+  name: string
+  contact_person: string | null
+  number: string | null
+  unread: number
+  last_message: { body: string; direction: 'in' | 'out'; status: MessageStatus; at: string | null } | null
+}
+
+export interface WhatsAppThread {
+  client: { id: number; name: string; contact_person: string | null; number: string | null }
+  data: ClientMessage[]
+}
+
+/** What the AI read from an uploaded requirement document. A first estimate for the user to review and edit. */
+export interface OnboardingStep {
+  title: string
+  description: string
+  stage: string | null
+  working_days: number
+  deliverables: string[]
+}
+
+export interface OnboardingAnalysis {
+  id: number
+  file: string
+  source: 'deepseek' | 'fallback'
+  confidence: number
+  extracted: {
+    project_name: string
+    client_name: string
+    project_type: string
+    summary: string
+    scope: string[]
+    modules: { name: string; description: string }[]
+    deliverables: string[]
+    technologies: string[]
+  }
+  estimate: {
+    working_days: number
+    complexity: 'low' | 'medium' | 'high'
+    assumptions: string[]
+    risks: string[]
+    steps: OnboardingStep[]
+    notes: string
+  }
 }

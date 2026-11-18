@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router'
 import { Bot, MessageCircle, Save } from 'lucide-react'
 import { Alert, Badge, Button, Card, CardHeader, Field, Input, PageHeader, Select, Skeleton } from '@/components/ui'
 import { Switch, Textarea } from '@/components/ui/extra'
@@ -139,8 +140,9 @@ export default function WorkspaceSettingsPage() {
             <CardHeader title="WhatsApp" />
             <div className="space-y-3 p-5 sm:p-6">
               <div className="flex items-center gap-2.5"><span className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><MessageCircle className="size-4" /></span>
-                <Badge className={data.whatsapp.state === 'open' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-amber-50 text-amber-700 ring-amber-200'}>{WA_STATE[data.whatsapp.state] ?? 'Not connected'}</Badge></div>
-              <p className="text-[13px] text-ink-500">WhatsApp runs through the platform's Evolution API server. Replies from clients are matched to a client by their WhatsApp number, and DeepSeek then evaluates the chat on the project. The platform admin links the phone and webhook with: php artisan plms:whatsapp-setup --qr</p>
+                <Badge className={data.whatsapp.state === 'open' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-amber-50 text-amber-700 ring-amber-200'}>{data.whatsapp.allowed ? (WA_STATE[data.whatsapp.state] ?? 'Not connected') : 'Not in your plan'}</Badge></div>
+              <p className="text-[13px] text-ink-500">{data.whatsapp.allowed ? 'Your workspace has its own WhatsApp number. Replies from clients are matched to a client by their WhatsApp number, and DeepSeek then evaluates the chat on the project.' : 'WhatsApp chat is part of the Enterprise plan. Upgrade to link your own number and chat with clients from here.'}</p>
+              {data.whatsapp.allowed && <Link to="/app/whatsapp" className="inline-block text-[13px] font-semibold text-brand-700 hover:underline">Open the WhatsApp inbox</Link>}
             </div>
           </Card>
         </div>
